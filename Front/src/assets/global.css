@@ -1,0 +1,13 @@
+* {
+    background-color: #F8F3F3;
+}
+
+a:link , a:visited {
+    text-decoration: none;
+}
+
+a:hover {
+    color: orange;
+    transition: 0.75s;
+}
+

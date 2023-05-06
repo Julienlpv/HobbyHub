@@ -1,8 +1,28 @@
 // CRUD CREATE READ UPDATE DELETE  
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://jujuodusseus:95200-Sar@hobbyhubcluster.xawna3v.mongodb.net/?retryWrites=true&w=majority";
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const username = "jujuodusseus";
+const password = "95200-Sar";
+const cluster = "hobbyhubcluster.xawna3v";
+const dbname = "Hobbyhubdb";
+const bcrypt = require('bcrypt'); 
+const port = 3000; 
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
+
+
+
+
+const express = require('express');
+const app = express();
+app.use(express.json());  
+
+async function main() {
+    await mongoose.connect( 
+        `mongodb+srv://${username}:${password}@${cluster}.mongodb.net/${dbname}?retryWrites=true&w=majority`
+    )
+}
+
 
 // const client = new MongoClient(process.env.MONGODB_URL);
 const mongoose = require('mongoose');
@@ -38,34 +58,41 @@ const musicSchema = new Schema({
 
 // Schéma de données pour les utilisateurs
 const userSchema = new Schema({
-    firstname: {type: Schema.Types.String, required: true},
-    lastname: {type: Schema.Types.String, required: true},
-    email: {type: Schema.Types.String, required: true},
-    registerDate: {type: Schema.Types.Date, required: true},
-    birthDate: {type: Schema.Types.Date, required: true},
-    Year: {type: Schema.Types.Number, required: true}
+    // firstname: {type: Schema.Types.String, required: true},
+    // lastname: {type: Schema.Types.String, required: true},
+    // email: {type: Schema.Types.String, required: true},
+    // registerDate: {type: Schema.Types.Date, required: true},
+    // birthDate: {type: Schema.Types.Date, required: true},
+    // Year: {type: Schema.Types.Number, required: true}
+    username: { type: Schema.Types.String, required: true },
+    password: {type: Schema.Types.String, required: true }
+
 }) 
 
 const musicModel = mongoose.model('musicModel', musicSchema);
 const bookModel = mongoose.model('bookModel', bookSchema);
 const filmModel = mongoose.model('filmModel',filmsSchema);
-const userModel = mongoose.model('userModel', userSchema);
+const User = mongoose.model('userModel', userSchema);
 
 module.exports = bookModel;
 module.exports = filmModel;
 module.exports = musicModel;
-module.exports = userModel;
+module.exports = userSchema;
+module.exports = User;
 
 
 
-async function main() {
-    await client.connect();
-    console.log('connexion OK!');
-    return "done :D";
-    addbook();
+//////////////////////// MIDDLEWARE DE HACHAGE /////////////////////////////////
 
-    
-}
+
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+
 
 
 //////////////////// TEST D'INSERTION ////////////////////////////////
@@ -79,6 +106,85 @@ async function testInsertBook() {
     Style: 'Conte philosophique',
     Editor: 'Gallimard'
   });
+    
+/////////////// TEST POUR LES USERS //////////////////////////////
+    
+    
+    app.get('/users', async (req, res) => {
+  const users = await User.find({});
+  res.send(users);
+});
+
+    
+//////////// INSCRIPTION //////////////////////////////////////////
+    
+app.post('/signup', async (req, res) => {
+  const { username, password } = req.body;
+
+  // Vérifie si l'utilisateur existe déjà
+  let user = await User.findOne({ username });
+  if (user) {
+    return res.status(400).send('Cet utilisateur existe déjà');
+  }
+
+  // Créer un nouvel utilisateur
+  user = new User({ username, password });
+
+  // Hasher le mot de passe avant de sauvegarder l'utilisateur
+  user.password = await bcrypt.hash(user.password, 10);
+
+  await user.save();
+
+  // Créer un token pour le nouvel utilisateur
+  const token = jwt.sign({ userId: user._id }, secret);
+
+  res.status(201).send({ token });
+});
+
+    
+    
+///////////// AUTHENTIFICATION //////////////////////////////////
+    var secret = process.env.MY_SECRET_KEY
+    console.log(secret)
+
+app.post('/signin', async (req, res) => {
+  const {username, password} = req.body;
+  const user = await User.findOne({username});
+  if (!user) {
+    return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
+  }
+  try {
+    if (await bcrypt.compare(password, user.password)) {
+      const token = jwt.sign({userId: user._id}, secret);
+      res.send({token});
+    } else {
+      return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
+    }
+  } catch {
+    return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
+  }
+});
+
+const requireAuth = (req, res, next) => {
+  const {authorization} = req.headers;
+  if (!authorization) {
+    return res.status(401).send({error: 'Vous devez être connecté'});
+  }
+  const token = authorization.replace('Bearer ', '');
+  jwt.verify(token, secret, (err, payload) => {
+    if (err) {
+      return res.status(401).send({error: 'Vous devez être connecté'});
+    }
+    req.user = payload;
+    next();
+  });
+};
+
+app.get('/secret', requireAuth, (req, res) => {
+  res.send('You have accessed the secret route.');
+});
+
+
 
   // Insérer le livre dans la collection de livres
   await newBook.save();
@@ -88,17 +194,23 @@ async function testInsertBook() {
 
   // Afficher les détails du livre
   console.log(firstBook);
-}
-
-testInsertBook();
+};
 
 
 
 
 main()
-    .then(console.log)
-    .catch(console.error)
-    .finally(() => client.close());
+    .then(() => {
+        console.log("test");
+        testInsertBook()
+    })
+    .catch(console.error);
 
 
 
+//////////////////////////
+
+
+app.listen(port, () => {
+  console.log(`Listening to the port ${port}`)
+})
