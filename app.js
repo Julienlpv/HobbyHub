@@ -8,13 +8,30 @@ const bcrypt = require('bcrypt');
 const port = 3000; 
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const express = require('express');
+const app = express();
+// const client = new MongoClient(process.env.MONGODB_URL);
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+const booksRouter = require('./routes/books.js');
+var secret = process.env.MY_SECRET_KEY;
+console.log(secret)
+const cors = require('cors');
+
+// ...
+
+// CORS middleware pour autoriser les requêtes cross-origin
+app.use(cors());
+
+
 dotenv.config();
 
 
 
 
-const express = require('express');
-const app = express();
+
+
+
 app.use(express.json());  
 
 async function main() {
@@ -24,9 +41,7 @@ async function main() {
 }
 
 
-// const client = new MongoClient(process.env.MONGODB_URL);
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+
 
 // Schéma de données pour les livres 
 const bookSchema = new Schema({
@@ -144,8 +159,7 @@ app.post('/signup', async (req, res) => {
     
     
 ///////////// AUTHENTIFICATION //////////////////////////////////
-    var secret = process.env.MY_SECRET_KEY
-    console.log(secret)
+    
 
 app.post('/signin', async (req, res) => {
   const {username, password} = req.body;
@@ -208,7 +222,42 @@ main()
 
 
 
-//////////////////////////
+////////////////////////// RECHERCHE DE LIVRE DANS L'API GOOGLE BOOKS //////////////////////////
+
+
+// const axios = require('axios');
+
+// const apiKey = 'AIzaSyA2e6nCsrhvdNPmoeZBIcygLLWfmbZYa1Q';
+// const searchQuery = 'javascript';
+
+// axios
+//   .get(`https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&key=${apiKey}`)
+//   .then((response) => {
+//     const books = response.data.items;
+
+//     books.forEach((book) => {
+//       const title = book.volumeInfo.title;
+//       const authors = book.volumeInfo.authors;
+//       const pageCount = book.volumeInfo.pageCount;
+//       const publisher = book.volumeInfo.publisher;
+//       const categories = book.volumeInfo.categories;
+
+//       console.log(`Title: ${title}`);
+//       console.log(`Authors: ${authors}`);
+//       console.log(`Page Count: ${pageCount}`);
+//       console.log(`Publisher: ${publisher}`);
+//       console.log(`Categories: ${categories}`);
+//       console.log('---');
+//     });
+//   })
+//   .catch((error) => {
+//     console.error('Error fetching data from Google Books API:', error);
+//   });
+
+// Route books
+app.use('/api/books', booksRouter);
+
+///////////////////////////////////////////
 
 
 app.listen(port, () => {
