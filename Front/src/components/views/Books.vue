@@ -25,6 +25,7 @@
 // Importez l'instance "api" d'Axios au lieu d'importer Axios directement
 import api from '../../services/api';
 
+
 export default {
     data() {
         return {
