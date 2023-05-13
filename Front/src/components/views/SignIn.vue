@@ -4,6 +4,9 @@
         <form @submit.prevent="submitSignInForm">
             <input v-model="username" type="text" placeholder="Username" required />
             <input v-model="password" type="password" placeholder="Password" required />
+            <!-- Change the div to a link that redirects to your backend's Google auth route -->
+            <a href="http://localhost:3000/auth/google" id="google-signin-button">Sign in with Google</a>
+
             <button type="submit">Sign In</button>
         </form>
     </div>
@@ -12,29 +15,34 @@
 <script>
 
 import api from "@/services/api";
+import { onMounted } from "vue";
 
 export default {
     data() {
         return {
-            username: "",
-            password: "",
+            username: '',
+            password: '',
         };
     },
     methods: {
         async submitSignInForm() {
             try {
-                const response = await api.post("/signin", {
+                const response = await api.post('/signin', {
                     username: this.username,
                     password: this.password,
                 });
 
                 const token = response.data.token;
-                // Stockez le token dans localStorage ou dans le Vuex store
-                // Redirigez l'utilisateur vers une page protégée ou la page d'accueil
+                localStorage.setItem("authToken", token); // Stockage du token dans le localStorage
+                this.isAuthenticated = true;
+                this.$router.push("/"); // Redirection après connexion
             } catch (error) {
-                // Gérez les erreurs de connexion (par exemple, affichez un message d'erreur)
+                
             }
         },
+        
+
     },
+    
 };
 </script>

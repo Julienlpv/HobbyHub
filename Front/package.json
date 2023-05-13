@@ -13,5 +13,9 @@
   "license": "ISC",
   "devDependencies": {
     "@vue/cli-service": "^5.0.8"
+  },
+  "dependencies": {
+    "vue-google-oauth2": "^1.5.10",
+    "vue3-google-oauth2": "^1.0.7"
   }
 }

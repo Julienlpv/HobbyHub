@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <header>
         <nav>
             <ul>
@@ -6,6 +6,7 @@
                 <li><router-link to="/series" class="series">Séries</router-link></li>
                 <li><router-link to="/movies" class="films">Films</router-link></li>
                 <li><router-link to="/musics" class="musics">Musiques</router-link></li>
+                <li v-if="isAuthenticated"><a @click="logout" class="logout">Déconnexion</a></li>
             </ul>
         </nav>
     </header>
@@ -13,10 +14,67 @@
 
 <script>
 export default {
-    name: 'AppHeader'
+  name: 'AppHeader',
+  data() {
+    return {
+      
+      isAuthenticated: !!localStorage.getItem('authToken'),
+      
+    };
+  },
+  methods: {
+    logout() {
+      
+      localStorage.removeItem('authToken');
+      this.isAuthenticated = false;
+      this.$router.push('/signin');
+    },
+    
+  }
 }
-</script>
+</script> -->
 
+
+<template>
+  <header>
+    <nav>
+      <ul>
+        <li><router-link to="/books" class="books">Livres</router-link></li>
+        <li><router-link to="/series" class="series">Séries</router-link></li>
+        <li><router-link to="/movies" class="films">Films</router-link></li>
+        <li><router-link to="/musics" class="musics">Musiques</router-link></li>
+        <li v-if="isAuthenticated"><a @click="logout" class="logout">Déconnexion</a></li>
+      </ul>
+    </nav>
+  </header>
+</template>
+
+<script>
+export default {
+  name: 'AppHeader',
+  data() {
+    return {
+      isAuthenticated: false,
+    };
+  },
+  methods: {
+    logout() {
+      localStorage.removeItem('authToken');
+      this.isAuthenticated = false;
+      this.$router.push('/signin');
+      this.$emit('auth-changed', this.isAuthenticated);
+    },
+  },
+  created() {
+    this.isAuthenticated = !!localStorage.getItem('authToken');
+  },
+  watch: {
+    '$route'() {
+      this.isAuthenticated = !!localStorage.getItem('authToken');
+    },
+  },
+};
+</script>
 
 <style>
 

@@ -1,5 +1,6 @@
-// CRUD CREATE READ UPDATE DELETE  
+// CRUD CREATE READ UPDATE DELETE
 
+require('./googleAuth');
 const username = "jujuodusseus";
 const password = "95200-Sar";
 const cluster = "hobbyhubcluster.xawna3v";
@@ -10,27 +11,27 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const express = require('express');
 const app = express();
+const favoritesRouter = require('./routes/favorites');
 // const client = new MongoClient(process.env.MONGODB_URL);
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const booksRouter = require('./routes/books.js');
-var secret = process.env.MY_SECRET_KEY;
+const reviewsRouter = require('./routes/reviews');
+const shelvesRouter = require('./routes/shelves');
+const secret = process.env.MY_SECRET_KEY;
 console.log(secret)
 const cors = require('cors');
+const passport = require('passport');
+const session = require('express-session');
 
-// ...
+
+app.use(session({ secret: 'cats ' }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // CORS middleware pour autoriser les requêtes cross-origin
 app.use(cors());
-
-
-dotenv.config();
-
-
-
-
-
-
+require('dotenv').config();
 
 app.use(express.json());  
 
@@ -84,17 +85,26 @@ const userSchema = new Schema({
 
 }) 
 
+const favoriteSchema = new Schema({
+  bookId: { type: String, required: true },
+  title: {type: String, required: true}
+})
+
+
+
 const musicModel = mongoose.model('musicModel', musicSchema);
 const bookModel = mongoose.model('bookModel', bookSchema);
 const filmModel = mongoose.model('filmModel',filmsSchema);
 const User = mongoose.model('userModel', userSchema);
+const favoriteModel = mongoose.model('Favorite', favoriteSchema);
 
+module.exports = favoriteModel;
 module.exports = bookModel;
 module.exports = filmModel;
 module.exports = musicModel;
 module.exports = userSchema;
 module.exports = User;
-
+module.exports = favoriteModel;
 
 
 //////////////////////// MIDDLEWARE DE HACHAGE /////////////////////////////////
@@ -133,71 +143,153 @@ async function testInsertBook() {
     
 //////////// INSCRIPTION //////////////////////////////////////////
     
-app.post('/signup', async (req, res) => {
+  app.post('/signup', async (req, res) => {
+  console.log(req.body)
   const { username, password } = req.body;
-
-  // Vérifie si l'utilisateur existe déjà
-  let user = await User.findOne({ username });
-  if (user) {
-    return res.status(400).send('Cet utilisateur existe déjà');
+  const secret = process.env.MY_SECRET_KEY;
+  // Vérifier que username et password sont définis et non vides
+  if (!username || !password) {
+    return res.status(400).send('Le nom d\'utilisateur et le mot de passe sont requis');
   }
 
-  // Créer un nouvel utilisateur
-  user = new User({ username, password });
+  try {
+    // Vérifier si l'utilisateur existe déjà
+    let user = await User.findOne({ username });
+    if (user) {
+      return res.status(400).send('Cet utilisateur existe déjà');
+    }
 
-  // Hasher le mot de passe avant de sauvegarder l'utilisateur
-  user.password = await bcrypt.hash(user.password, 10);
+    // Créer un nouvel utilisateur
+    user = new User({ username, password });
 
-  await user.save();
+    // Hasher le mot de passe avant de sauvegarder l'utilisateur
+    user.password = await bcrypt.hash(user.password, 10);
 
-  // Créer un token pour le nouvel utilisateur
-  const token = jwt.sign({ userId: user._id }, secret);
+    await user.save();
 
-  res.status(201).send({ token });
+    // Vérifier que le secret est défini
+    if (!secret) {
+      throw new Error('Le secret pour signer le token JWT n\'est pas défini');
+    }
+
+    // Créer un token pour le nouvel utilisateur
+    const token = jwt.sign({ userId: user._id }, secret);
+
+    res.status(201).send({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Une erreur est survenue lors de l\'inscription');
+  }
 });
+
 
     
     
 ///////////// AUTHENTIFICATION //////////////////////////////////
-    
-
-app.post('/signin', async (req, res) => {
-  const {username, password} = req.body;
-  const user = await User.findOne({username});
+  
+  app.post('/signin', async (req, res) => {
+  const secret = process.env.MY_SECRET_KEY;
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  
   if (!user) {
-    return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
+    return res.status(422).send({ error: 'Mot de passe ou identifiant invalide' });
   }
-  try {
-    if (await bcrypt.compare(password, user.password)) {
-      const token = jwt.sign({userId: user._id}, secret);
-      res.send({token});
-    } else {
-      return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
-    }
-  } catch {
-    return res.status(422).send({error: 'Mot de passe ou identifiant invalide'});
+  
+  const match = await bcrypt.compare(password, user.password);
+
+  console.log('Resultat de la comparaison de bcrypt:', match);
+  console.log('Mot de passe haché dans la base de données:', user.password);
+
+  if (!match) {
+    return res.status(422).send({ error: 'Mot de passe ou identifiant invalide' });
   }
+
+  const token = jwt.sign({ userId: user._id, username: user.username }, secret);
+  res.send({ token });
 });
 
-const requireAuth = (req, res, next) => {
+
+
+  
+  const requireAuth = (req, res, next) => {
+  const secret = process.env.MY_SECRET_KEY;
   const {authorization} = req.headers;
+  console.log("Authorization Header:", authorization);
   if (!authorization) {
+    console.log("No Authorization Header"); 
     return res.status(401).send({error: 'Vous devez être connecté'});
   }
   const token = authorization.replace('Bearer ', '');
+  console.log("Token:", token);
   jwt.verify(token, secret, (err, payload) => {
     if (err) {
+      console.log("JWT Verification Error:", err); 
       return res.status(401).send({error: 'Vous devez être connecté'});
     }
+    console.log("JWT Verification Success, Payload:", payload); 
     req.user = payload;
     next();
   });
 };
 
-app.get('/secret', requireAuth, (req, res) => {
-  res.send('You have accessed the secret route.');
+  
+
+
+
+  ////////////////////// ISLOGGED IN ////////////////////////////////
+
+  function isLoggedIn(req, res, next) {
+    req.user ? next() : res.sendStatus(401);
+  }
+  
+  
+  
+  //////////////////////// AUTH AVEC GOOGLE /////////////////////////////////////
+
+  app.get('/', (req, res) => {
+        res.send('<a href="/auth/google"> Authentification avec Google</a>')
+})
+
+  app.get('/auth/google',
+      passport.authenticate('google', { scope: ['email', 'profile']})
+  )
+  
+  app.get('/google/callback',
+    passport.authenticate('google', {
+      successRedirect: '/secret',
+      failureRedirect: '/auth/failure',
+    })
+  );
+
+  app.get('/auth/failure', (req, res) => {
+    res.send('Quelque chose s\'est mal passé')
+  })
+  
+  
+  ///////////////////////////// ROUTE PROTEGEES DONT LA CONNEXION EST OBLIGATOIRE /////////////////////////////
+  
+  app.get('/secret', isLoggedIn || requireAuth, (req, res) => {
+    res.send('You have accessed the secret route.');
+  });
+  
+  
+  app.get('/protected-route', requireAuth, (req, res) => {
+  res.send({ message: `Hello, ${req.user.username}` });
 });
 
+  
+  // Route books
+app.use('/api/books', requireAuth, booksRouter);
+// Route Favs 
+app.use('/api/favorites', requireAuth, favoritesRouter);
+// Route reviews
+app.use('/api/reviews', requireAuth, reviewsRouter);
+// Route shelves
+app.use('/api/shelves', requireAuth, shelvesRouter);
+
+  
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
   // Insérer le livre dans la collection de livres
@@ -221,41 +313,6 @@ main()
     .catch(console.error);
 
 
-
-////////////////////////// RECHERCHE DE LIVRE DANS L'API GOOGLE BOOKS //////////////////////////
-
-
-// const axios = require('axios');
-
-// const apiKey = 'AIzaSyA2e6nCsrhvdNPmoeZBIcygLLWfmbZYa1Q';
-// const searchQuery = 'javascript';
-
-// axios
-//   .get(`https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&key=${apiKey}`)
-//   .then((response) => {
-//     const books = response.data.items;
-
-//     books.forEach((book) => {
-//       const title = book.volumeInfo.title;
-//       const authors = book.volumeInfo.authors;
-//       const pageCount = book.volumeInfo.pageCount;
-//       const publisher = book.volumeInfo.publisher;
-//       const categories = book.volumeInfo.categories;
-
-//       console.log(`Title: ${title}`);
-//       console.log(`Authors: ${authors}`);
-//       console.log(`Page Count: ${pageCount}`);
-//       console.log(`Publisher: ${publisher}`);
-//       console.log(`Categories: ${categories}`);
-//       console.log('---');
-//     });
-//   })
-//   .catch((error) => {
-//     console.error('Error fetching data from Google Books API:', error);
-//   });
-
-// Route books
-app.use('/api/books', booksRouter);
 
 ///////////////////////////////////////////
 

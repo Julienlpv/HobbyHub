@@ -40,6 +40,8 @@ export default {
                 if (response.ok) {
                     const data = await response.json();
                     console.log("Inscription réussie", data);
+                    window.alert('Inscription réussie, veuillez vous connecter');
+                    this.$router.push('/signin'); // Redirection vers la page de connexion
                 } else {
                     console.error("Erreur lors de l'inscription", response);
                 }

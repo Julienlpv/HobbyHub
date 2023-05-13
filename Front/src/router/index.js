@@ -6,6 +6,9 @@ import Books from '@/components/views/Books.vue';
 import Series from '@/components/views/Series.vue';
 import Movies from '@/components/views/Movies.vue';
 import Musics from '@/components/views/Musics.vue';
+import Shelves from '@/components/views/Shelves.vue';
+import Reviews from '@/components/views/Reviews.vue';
+import Testprotected from '@/components/views/Testprotected.vue';
 
 const routes = [
   {
@@ -42,7 +45,22 @@ const routes = [
     path: '/musics',
     name: 'Musics',
     component: Musics
-  }
+  },
+  {
+    path: '/shelves',
+    name: 'Shelves',
+    component: Shelves,
+  },
+  {
+    path: '/reviews/:volumeId',
+    name: 'Reviews',
+    component: Reviews,
+  },
+  {
+    path: '/test-protected',
+    name: 'Testprotected',
+    component: Testprotected,
+  },
 ];
 
 const router = createRouter({
