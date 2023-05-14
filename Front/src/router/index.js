@@ -84,6 +84,7 @@ router.beforeEach((to, from, next) => {
      
       next({
         path: '/signin',
+        query: { message: 'Vous devez être connecté pour accéder à cette fonctionnalité' }
       })
     } else {
       next() 

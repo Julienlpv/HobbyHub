@@ -1,23 +1,30 @@
 <template>
     <div class="home">
         <h1>HobbyHub</h1>
-
-        <p> 
+        <p v-if="!isAuthenticated">
             Veuillez vous
             <router-link to="/signin">connecter</router-link>
             ou vous
             <router-link to="/signup">inscrire</router-link>
         </p>
+        <div v-if="welcomeMessage" class="welcome-message">{{ welcomeMessage }}</div>
     </div>
 </template>
 
 <script>
 export default {
-    name: "Home"
+    name: "Home",
+    data() {
+        return {
+            welcomeMessage: this.$route.query.welcome,
+            isAuthenticated: false,
+        }
+    },
+    created() {
+        this.isAuthenticated = !!localStorage.getItem('authToken');
+    }
 };
 </script>
-
-
 
 <style scoped>
 .home {
@@ -36,6 +43,12 @@ h1 {
 
 p {   
     font-family: 'Open Sans', sans-serif;
+}
+
+.welcome-message {
+    color: rgb(219, 154, 32);
+    font-family: 'Love Ya Like A Sister', cursive;
+    font-size: 300%;
 }
 
 </style>
