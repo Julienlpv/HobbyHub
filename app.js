@@ -280,13 +280,13 @@ async function testInsertBook() {
 
   
   // Route books
-app.use('/api/books', requireAuth, booksRouter);
+app.use('/api/books', booksRouter);
 // Route Favs 
-app.use('/api/favorites', requireAuth, favoritesRouter);
+app.use('/api/favorites', favoritesRouter);
 // Route reviews
-app.use('/api/reviews', requireAuth, reviewsRouter);
+app.use('/api/reviews', reviewsRouter);
 // Route shelves
-app.use('/api/shelves', requireAuth, shelvesRouter);
+app.use('/api/shelves', shelvesRouter);
 
   
 ///////////////////////////////////////////////////////////////////////////////////////////////////

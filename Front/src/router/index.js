@@ -14,7 +14,8 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
+    component: Home
+    
   },
   {
     path: '/signin',
@@ -29,37 +30,44 @@ const routes = [
    {
     path: '/books',
     name: 'Books',
-    component: Books
+     component: Books,
+    meta: { requiresAuth: true }
   },
   {
     path: '/series',
     name: 'Series',
-    component: Series
+    component: Series,
+    meta: { requiresAuth: true }
   },
   {
     path: '/movies',
     name: 'Movies',
-    component: Movies
+    component: Movies,
+    meta: { requiresAuth: true }
   },
   {
     path: '/musics',
     name: 'Musics',
-    component: Musics
+    component: Musics,
+    meta: { requiresAuth: true }
   },
   {
     path: '/shelves',
     name: 'Shelves',
     component: Shelves,
+    meta: { requiresAuth: true }
   },
   {
     path: '/reviews/:volumeId',
     name: 'Reviews',
     component: Reviews,
+    meta: { requiresAuth: true }
   },
   {
     path: '/test-protected',
     name: 'Testprotected',
     component: Testprotected,
+    meta: { requiresAuth: true }
   },
 ];
 
@@ -67,5 +75,24 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+     
+      next({
+        path: '/signin',
+      })
+    } else {
+      next() 
+    }
+  } else {
+    next() 
+  }
+})
+
+
 
 export default router;
