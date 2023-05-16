@@ -6,9 +6,10 @@ import Books from '@/components/views/Books.vue';
 import Series from '@/components/views/Series.vue';
 import Movies from '@/components/views/Movies.vue';
 import Musics from '@/components/views/Musics.vue';
-import Shelves from '@/components/views/Shelves.vue';
+import Favorites from '@/components/views/Favorites.vue';
 import Reviews from '@/components/views/Reviews.vue';
 import Testprotected from '@/components/views/Testprotected.vue';
+
 
 const routes = [
   {
@@ -52,9 +53,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/shelves',
-    name: 'Shelves',
-    component: Shelves,
+    path: '/favorites',
+    name: 'Favorites',
+    component: Favorites,
     meta: { requiresAuth: true }
   },
   {

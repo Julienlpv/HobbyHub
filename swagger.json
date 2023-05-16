@@ -1,0 +1,79 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "HobbyHub"
+  },
+  "paths": {  // ROUTES DU BACK 
+    "/signup": {
+      "post": {
+        "summary": "Inscription",
+        "description": "Créer un compte",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "header",
+            "description": "Username",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
+          {
+            "name": "password",
+            "in": "header",
+            "description": "Password",
+            "required": true,
+            "type": "string",
+            "format": "password"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Opération réussie"
+          },
+          "409": {
+            "description": "L'utilisateur existe déjà"
+          },
+          "400": {
+            "description": "Mauvaise requête"
+          }
+        }
+      }
+    },
+    "/signin": {
+        "post": {
+            "summary":"Connexion",
+            "description":"Connexion",
+            "parameters": [
+                {
+            "name": "username",
+            "in": "header",
+            "description": "Username",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
+          {
+            "name": "password",
+            "in": "header",
+            "description": "Password",
+            "required": true,
+            "type": "string",
+            "format": "password"
+          }
+        ],
+        "responses": 
+            {
+          "200": {
+            "description": "Opération réussie"
+          },
+          "409": {
+            "description": "L'utilisateur existe déjà"
+          },
+          "400": {
+            "description": "Mauvaise requête"
+          }
+        }
+        }
+    }
+}
+}
