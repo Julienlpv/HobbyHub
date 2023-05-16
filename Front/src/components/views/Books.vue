@@ -1,54 +1,3 @@
-<!-- <template>
-    <div>
-        <h1>Recherche de livres</h1>
-        <form @submit.prevent="searchBooks">
-            <label for="search-query">Rechercher :</label>
-            <input id="search-query" v-model="searchQuery" type="text" />
-            <button type="submit">Rechercher</button>
-        </form>
-        <div v-if="books.length > 0">
-            <h2>Résultats de la recherche :</h2>
-            <ul>
-                <li v-for="book in books" :key="book.id">
-                    <h3>{{ book.volumeInfo.title }}</h3>
-                    <p>Auteurs : {{ book.volumeInfo.authors }}</p>
-                    <p>Nombre de pages : {{ book.volumeInfo.pageCount }}</p>
-                    <p>Éditeur : {{ book.volumeInfo.publisher }}</p>
-                    <p>Catégories : {{ book.volumeInfo.categories }}</p>
-                </li>
-            </ul>
-        </div>
-    </div>
-</template>
-
-<script>
-// Importez l'instance "api" d'Axios au lieu d'importer Axios directement
-import api from '../../services/api';
-
-
-export default {
-    data() {
-        return {
-            searchQuery: '',
-            books: [],
-        };
-    },
-    methods: {
-        async searchBooks() {
-            try {
-                // Utilisez l'instance "api" d'Axios pour faire la requête
-                const response = await api.get(`/api/books/search?q=${this.searchQuery}`);
-                this.books = response.data;
-            } catch (error) {
-                console.error('Error fetching data from API:', error);
-            }
-        },
-    },
-};
-
-</script> -->
-
-
 <template>
     <div>
         <h1>Recherche de livres</h1>
@@ -62,6 +11,7 @@ export default {
         <div class="card-container" v-if="books.length > 0">
             <h2>Résultats de la recherche</h2>
             <div class="card" v-for="book in books" :key="book.id">
+                <button @click="addToFavorites(book.id)">Ajouter aux favoris</button>
                 <h3>{{ book.volumeInfo.title }}</h3>
                 <img v-if="book.volumeInfo.imageLinks" :src="book.volumeInfo.imageLinks.thumbnail" alt="Couverture du livre" class="bookimg" />
                 <p>Auteurs : {{ book.volumeInfo.authors }}</p>
@@ -73,30 +23,7 @@ export default {
     </div>
 </template>
 
-<!-- <script>
-// Importez l'instance "api" d'Axios au lieu d'importer Axios directement
-import api from '../../services/api';
 
-export default {
-    data() {
-        return {
-            searchQuery: '',
-            books: [],
-        };
-    },
-    methods: {
-        async searchBooks() {
-            try {
-                // Utilisez l'instance "api" d'Axios pour faire la requête
-                const response = await api.get(`/api/books/search?q=${this.searchQuery}&maxResults=40`);
-                this.books = response.data;
-            } catch (error) {
-                console.error('Error fetching data from API:', error);
-            }
-        },
-    },
-};
-</script> -->
 
 <script>
 import api from '../../services/api';
@@ -106,7 +33,7 @@ export default {
         return {
             searchQuery: '',
             books: [],
-            page: 1, // Ajoutez une nouvelle propriété pour suivre la page actuelle
+            page: 1, 
         };
     },
     methods: {
@@ -126,6 +53,21 @@ export default {
             if (this.page > 1) {
                 this.page -= 1;
                 this.searchBooks();
+            }
+        },
+        async addToFavorites(bookId) {
+            try {
+                const token = localStorage.getItem('authToken');
+                console.log(token);
+                await api.post(`/api/favorites/addToFavorites/${bookId}`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                alert('Le livre a été ajouté à vos favoris.');
+            } catch (error) {
+                console.error('Error adding book to favorites:', error);
+                alert('Erreur lors de l\'ajout du livre aux favoris. Veuillez réessayer.');
             }
         },
     },

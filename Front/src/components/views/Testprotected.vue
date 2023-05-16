@@ -11,27 +11,6 @@
 <script>
 import { fetchProtectedData } from '../../services/protected';
 
-// export default {
-//     data() {
-//         return {
-//             message: '',
-//         };
-//     },
-//     methods: {
-//         async fetchData() {
-//             try {
-//                 const data = await fetchProtectedData();
-//                 this.data = data;
-//             } catch (error) {
-//                 console.error("Erreur lors de la récupération des données protégées", error);
-//             }
-//         }
-//     },
-//     mounted() {
-//         this.fetchData();
-//     }
-// };
-
 export default {
     data() {
         return {

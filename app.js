@@ -11,19 +11,18 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const express = require('express');
 const app = express();
-const favoritesRouter = require('./routes/favorites');
 // const client = new MongoClient(process.env.MONGODB_URL);
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const booksRouter = require('./routes/books.js');
 const reviewsRouter = require('./routes/reviews');
-const shelvesRouter = require('./routes/shelves');
+const favoritesRouter = require('./routes/favorite');
 const secret = process.env.MY_SECRET_KEY;
 console.log(secret)
 const cors = require('cors');
 const passport = require('passport');
 const session = require('express-session');
-
+const axios = require('axios');
 
 app.use(session({ secret: 'cats ' }));
 app.use(passport.initialize());
@@ -34,6 +33,20 @@ app.use(cors());
 require('dotenv').config();
 
 app.use(express.json());  
+const options = {
+  swaggerDefinition: {
+    info: {
+      title: "HobbyHub",
+      servers: ["http://localhost:3000"], // Pour y accéder http://localhost:3000/swagger
+    },
+  },
+  apis: ["app.js"],
+};
+ 
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger.json");
+ 
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDocument, options));
 
 async function main() {
     await mongoose.connect( 
@@ -50,7 +63,8 @@ const bookSchema = new Schema({
     Author: {type: Schema.Types.String, required: true},
     PageNumber: {type: Schema.Types.Number, required:true},
     Style: {type: Schema.Types.String, required: true},
-    Editor: {type: Schema.Types.String, required: true}
+  Editor: { type: Schema.Types.String, required: true },
+    Description: { type: Schema.Types.String, required: false }
 }) 
 
 // Schéma de données pour les films 
@@ -74,21 +88,18 @@ const musicSchema = new Schema({
 
 // Schéma de données pour les utilisateurs
 const userSchema = new Schema({
-    // firstname: {type: Schema.Types.String, required: true},
-    // lastname: {type: Schema.Types.String, required: true},
-    // email: {type: Schema.Types.String, required: true},
-    // registerDate: {type: Schema.Types.Date, required: true},
-    // birthDate: {type: Schema.Types.Date, required: true},
-    // Year: {type: Schema.Types.Number, required: true}
     username: { type: Schema.Types.String, required: true },
-    password: {type: Schema.Types.String, required: true }
-
+    password: {type: Schema.Types.String, required: true },
+    favorites: [{ type: Schema.Types.ObjectId, ref: 'Favorite' }]
 }) 
 
+// Schéma de données pour les favoris
+
 const favoriteSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   bookId: { type: String, required: true },
   title: {type: String, required: true}
-})
+});
 
 
 
@@ -96,16 +107,16 @@ const musicModel = mongoose.model('musicModel', musicSchema);
 const bookModel = mongoose.model('bookModel', bookSchema);
 const filmModel = mongoose.model('filmModel',filmsSchema);
 const User = mongoose.model('userModel', userSchema);
-const favoriteModel = mongoose.model('Favorite', favoriteSchema);
+const Favorite = mongoose.model('Favorite', favoriteSchema);
 
-module.exports = favoriteModel;
+
+
 module.exports = bookModel;
 module.exports = filmModel;
 module.exports = musicModel;
 module.exports = userSchema;
 module.exports = User;
-module.exports = favoriteModel;
-
+module.exports = Favorite;
 
 //////////////////////// MIDDLEWARE DE HACHAGE /////////////////////////////////
 
@@ -132,6 +143,34 @@ async function testInsertBook() {
     Editor: 'Gallimard'
   });
     
+
+///////////////////////// INSERTION DES DONNEES DE LAPI DANS LA BASE MONGODB ///////////////////////////
+  
+  // Requête à l'API Google Books
+  function searchAndSaveBooks(searchTerm) {
+    const axios = require('axios');
+    axios.get(`https://www.googleapis.com/books/v1/volumes?q=${searchTerm}`)
+      .then(response => {
+        // Parcourir chaque livre retourné par l'API
+        for (let item of response.data.items) {
+          // Créer un nouvel objet Book avec les données de l'API
+          let book = new bookModel({
+            name: item.volumeInfo.title,
+            Author: item.volumeInfo.authors ? item.volumeInfo.authors.join(", ") : "N/A",
+            PageNumber: item.volumeInfo.pageCount,
+            Style: item.volumeInfo.categories ? item.volumeInfo.categories.join(", ") : "N/A",
+            Editor: item.volumeInfo.publisher ? item.volumeInfo.publisher : "N/A"
+          });
+
+          // Sauvegarder le nouveau livre dans la base de données
+          book.save()
+            .then(() => console.log(`Le livre ${book.name} a été sauvegardé !`))
+            .catch(error => console.log('Erreur lors de la sauvegarde du livre :', error));
+        }
+      })
+      .catch(error => console.log('Erreur lors de la récupération des données de l\'API Google Books:', error));
+
+  }
 /////////////// TEST POUR LES USERS //////////////////////////////
     
     
@@ -210,7 +249,7 @@ async function testInsertBook() {
 });
 
 
-
+////////////// MIDDLEWARE DAUTHENTIFICATION /////////////////////////////////
   
   const requireAuth = (req, res, next) => {
   const secret = process.env.MY_SECRET_KEY;
@@ -233,6 +272,7 @@ async function testInsertBook() {
   });
 };
 
+ 
   
 
 
@@ -285,8 +325,7 @@ app.use('/api/books', booksRouter);
 app.use('/api/favorites', favoritesRouter);
 // Route reviews
 app.use('/api/reviews', reviewsRouter);
-// Route shelves
-app.use('/api/shelves', shelvesRouter);
+
 
   
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -320,3 +359,7 @@ main()
 app.listen(port, () => {
   console.log(`Listening to the port ${port}`)
 })
+
+
+
+

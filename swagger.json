@@ -3,7 +3,7 @@
   "info": {
     "title": "HobbyHub"
   },
-  "paths": {  // ROUTES DU BACK 
+  "paths": {  
     "/signup": {
       "post": {
         "summary": "Inscription",

@@ -3,8 +3,7 @@
         <header>
             <nav>
                 <router-link to="/"><img src="./assets/home.png" alt=""></router-link>
-                <!-- <router-link to="/signin">Sign In</router-link>
-                <router-link to="/signup">Sign Up</router-link> -->
+                
                 <AppHeader />
 
             </nav>

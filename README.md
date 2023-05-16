@@ -2,7 +2,7 @@
 
 Make wish lists and enjoy your hobbies !
 
---> This is the back office.
+Pour lancer l'appli
 
-côté back: nodemon app.js
-côté front, cd Front: npm run serve
+côté back (à la racine de l'appli): nodemon app.js
+côté front (entrer dans "Front") cd Front: npm run serve

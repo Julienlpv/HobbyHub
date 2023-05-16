@@ -5,7 +5,6 @@
         <form @submit.prevent="submitSignInForm">
             <input v-model="username" type="text" placeholder="Username" required />
             <input v-model="password" type="password" placeholder="Password" required />
-            <!-- Change the div to a link that redirects to your backend's Google auth route -->
             <a href="http://localhost:3000/auth/google" id="google-signin-button">Sign in with Google</a>
 
             <button type="submit">Sign In</button>
