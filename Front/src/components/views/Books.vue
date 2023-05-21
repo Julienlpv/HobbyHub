@@ -55,7 +55,17 @@ export default {
                 this.searchBooks();
             }
         },
+        
+
         async addToFavorites(bookId) {
+            if (!bookId) {
+                console.error('Book ID is undefined');
+                console.log('PAS DID de livre associé');
+                return;
+            }
+
+            console.log(bookId);
+
             try {
                 const token = localStorage.getItem('authToken');
                 console.log(token);
@@ -70,9 +80,13 @@ export default {
                 alert('Erreur lors de l\'ajout du livre aux favoris. Veuillez réessayer.');
             }
         },
+
+
     },
 };
 </script>
+
+
 
 <style>
 .card-container {

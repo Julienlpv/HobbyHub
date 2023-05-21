@@ -12,9 +12,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@vue/cli-service": "^5.0.8"
+    "@types/jsonwebtoken": "^9.0.2",
+    "@vue/cli-service": "^5.0.8",
+    "polyfill-library": "^4.7.0"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.0",
     "vue-google-oauth2": "^1.5.10",
     "vue3-google-oauth2": "^1.0.7"
   }

@@ -28,6 +28,15 @@ app.use(session({ secret: 'cats ' }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+///////////////////////////////////////////////////////////
+
+const bookModel = require('./models/bookModel');
+// const userModel = require('./models/userModel');
+const Favorites = require('./models/favoritesModel');
+const musicModel = require('./models/musicModel');
+const filmModel = require('./models/filmModel');
+const User = require('./models/userModel');
+
 // CORS middleware pour autoriser les requêtes cross-origin
 app.use(cors());
 require('dotenv').config();
@@ -55,82 +64,6 @@ async function main() {
 }
 
 
-
-
-// Schéma de données pour les livres 
-const bookSchema = new Schema({
-    name: {type: Schema.Types.String, required: true},
-    Author: {type: Schema.Types.String, required: true},
-    PageNumber: {type: Schema.Types.Number, required:true},
-    Style: {type: Schema.Types.String, required: true},
-  Editor: { type: Schema.Types.String, required: true },
-    Description: { type: Schema.Types.String, required: false }
-}) 
-
-// Schéma de données pour les films 
-const filmsSchema = new Schema({
-    name: {type: Schema.Types.String, required: true},
-    Author: {type: Schema.Types.String, required: true},
-    PageNumber: {type: Schema.Types.Number, required: true},
-    Style: {type: Schema.Types.String, required: true},
-    Editor: {type: Schema.Types.String, required: true}
-}) 
-
-// Schéma de données pour les musiques
-const musicSchema = new Schema({
-    songname: {type: Schema.Types.String, required: true},
-    Author: {type: Schema.Types.String, required: true},
-    Artist: {type: Schema.Types.String, required: true},
-    songDuration: {type: Schema.Types.Number, required: true},
-    Style: {type: Schema.Types.String, required: true},
-    Year: {type: Schema.Types.String, required: true}
-}) 
-
-// Schéma de données pour les utilisateurs
-const userSchema = new Schema({
-    username: { type: Schema.Types.String, required: true },
-    password: {type: Schema.Types.String, required: true },
-    favorites: [{ type: Schema.Types.ObjectId, ref: 'Favorite' }]
-}) 
-
-// Schéma de données pour les favoris
-
-const favoriteSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  bookId: { type: String, required: true },
-  title: {type: String, required: true}
-});
-
-
-
-const musicModel = mongoose.model('musicModel', musicSchema);
-const bookModel = mongoose.model('bookModel', bookSchema);
-const filmModel = mongoose.model('filmModel',filmsSchema);
-const User = mongoose.model('userModel', userSchema);
-const Favorite = mongoose.model('Favorite', favoriteSchema);
-
-
-
-module.exports = bookModel;
-module.exports = filmModel;
-module.exports = musicModel;
-module.exports = userSchema;
-module.exports = User;
-module.exports = Favorite;
-
-//////////////////////// MIDDLEWARE DE HACHAGE /////////////////////////////////
-
-
-userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-  next();
-});
-
-
-
-
 //////////////////// TEST D'INSERTION ////////////////////////////////
 
 async function testInsertBook() {
@@ -145,38 +78,47 @@ async function testInsertBook() {
     
 
 ///////////////////////// INSERTION DES DONNEES DE LAPI DANS LA BASE MONGODB ///////////////////////////
-  
-  // Requête à l'API Google Books
-  function searchAndSaveBooks(searchTerm) {
-    const axios = require('axios');
-    axios.get(`https://www.googleapis.com/books/v1/volumes?q=${searchTerm}`)
-      .then(response => {
-        // Parcourir chaque livre retourné par l'API
-        for (let item of response.data.items) {
-          // Créer un nouvel objet Book avec les données de l'API
-          let book = new bookModel({
-            name: item.volumeInfo.title,
-            Author: item.volumeInfo.authors ? item.volumeInfo.authors.join(", ") : "N/A",
-            PageNumber: item.volumeInfo.pageCount,
-            Style: item.volumeInfo.categories ? item.volumeInfo.categories.join(", ") : "N/A",
-            Editor: item.volumeInfo.publisher ? item.volumeInfo.publisher : "N/A"
-          });
 
-          // Sauvegarder le nouveau livre dans la base de données
-          book.save()
-            .then(() => console.log(`Le livre ${book.name} a été sauvegardé !`))
-            .catch(error => console.log('Erreur lors de la sauvegarde du livre :', error));
-        }
-      })
-      .catch(error => console.log('Erreur lors de la récupération des données de l\'API Google Books:', error));
 
-  }
+  function saveBookToDatabase(bookData) {
+  let book = new bookModel({
+    name: bookData.volumeInfo.title,
+    Author: bookData.volumeInfo.authors ? bookData.volumeInfo.authors.join(", ") : "N/A",
+    PageNumber: bookData.volumeInfo.pageCount,
+    Style: bookData.volumeInfo.categories ? bookData.volumeInfo.categories.join(", ") : "N/A",
+    Editor: bookData.volumeInfo.publisher ? bookData.volumeInfo.publisher : "N/A"
+  });
+
+  // Sauvegarder le nouveau livre dans la base de données
+  book.save()
+    .then(() => console.log(`Le livre ${book.name} a été sauvegardé !`))
+    .catch(error => console.log('Erreur lors de la sauvegarde du livre :', error));
+}
+
+//sauvegarder le livre sélectionné dans la base de données
+function addToFavorites(bookId) {
+  const axios = require('axios');
+  axios.get(`https://www.googleapis.com/books/v1/volumes/${bookId}`)
+    .then(response => {
+      const bookData = response.data;
+      saveBookToDatabase(bookData);
+    })
+    .catch(error => console.log('Erreur lors de la récupération des données du livre depuis l\'API Google Books:', error));
+}
+
 /////////////// TEST POUR LES USERS //////////////////////////////
     
     
     app.get('/users', async (req, res) => {
   const users = await User.find({});
   res.send(users);
+    });
+  
+/////////////// TEST POUR LES FAVORIS ///////////////////////////////
+  
+      app.get('/favs', async (req, res) => {
+  const favorites = await Favorites.find({});
+  res.send(favorites);
 });
 
     
@@ -327,7 +269,7 @@ app.use('/api/favorites', favoritesRouter);
 app.use('/api/reviews', reviewsRouter);
 
 
-  
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -340,6 +282,8 @@ app.use('/api/reviews', reviewsRouter);
   // Afficher les détails du livre
   console.log(firstBook);
 };
+
+///////////////////////////////////////
 
 
 
